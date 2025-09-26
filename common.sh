@@ -12,6 +12,7 @@ LOG_FILE="$LOGS_FOLDER/$SCRIPT_NAME.log" # /var/log/shell-script/16-logs.log
 START_TIME=$(date +%s)
 SCRIPT_DIR=$PWD
 MONGODB_HOST=mongodb.gdaws86s.fun
+MYSQL_HOST=mysql.gdaws86s.fun
 
 mkdir -p $LOGS_FOLDER
 echo "Script started executed at: $(date)" | tee -a $LOG_FILE
@@ -42,24 +43,48 @@ nodejs_setup(){
         VALIDATE $? "Installing NodeJS"
 }
 
+java_setup(){
+    dnf install maven -y &>>$LOG_FILE
+    VALIDATE $? "Installing Maven"
+    mvn clean package &>>$LOG_FILE
+    VALIDATE $? "Packing the application"
+    mv target/shipping-1.0.jar shipping.jar &>>$LOG_FILE
+    VALIDATE $? "Renaming the artifact"
+}
+
+python_setup(){
+    dnf install python3 gcc python3-devel -y &>>$LOG_FILE
+    VALIDATE $? "Installing Python3"
+    pip3 install -r requirements.txt &>>$LOG_FILE
+    VALIDATE $? "Installing dependencies"
+}
+
 app_setup(){
+
+    id roboshop &>>$LOG_FILE
+    if [ $? -ne 0 ]; then
+        useradd --system --home /app --shell /sbin/nologin --comment "roboshop system user" roboshop &>>$LOG_FILE
+        VALIDATE $? "Creating system user"
+    else
+        echo -e "User already exist ... $Y SKIPPING $N"
+    fi
     mkdir -p /app
-VALIDATE $? "Creating app directory"
+    VALIDATE $? "Creating app directory"
 
-curl -o /tmp/$app_name.zip https://roboshop-artifacts.s3.amazonaws.com/$app_name-v3.zip &>>$LOG_FILE
-VALIDATE $? "Downloading $app_name application"
+    curl -o /tmp/$app_name.zip https://roboshop-artifacts.s3.amazonaws.com/$app_name-v3.zip &>>$LOG_FILE
+    VALIDATE $? "Downloading $app_name application"
 
-cd /app 
-VALIDATE $? "Changing to app directory"
+    cd /app 
+    VALIDATE $? "Changing to app directory"
 
-rm -rf /app/*
-VALIDATE $? "Removing existing code"
+    rm -rf /app/*
+    VALIDATE $? "Removing existing code"
 
-unzip /tmp/$app_name.zip &>>$LOG_FILE
-VALIDATE $? "unzip $app_name"
+    unzip /tmp/$app_name.zip &>>$LOG_FILE
+    VALIDATE $? "unzip $app_name"
 
-npm install &>>$LOG_FILE
-VALIDATE $? "Install dependencies"
+    npm install &>>$LOG_FILE
+    VALIDATE $? "Install dependencies"
 }
 
 systemd_setup(){

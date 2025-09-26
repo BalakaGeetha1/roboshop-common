@@ -41,6 +41,9 @@ nodejs_setup(){
         VALIDATE $? "Enabling NodeJS 20"
         dnf install nodejs -y &>>$LOG_FILE
         VALIDATE $? "Installing NodeJS"
+
+            npm install &>>$LOG_FILE
+            VALIDATE $? "Install dependencies"
 }
 
 java_setup(){
@@ -89,11 +92,11 @@ app_setup(){
 
 systemd_setup(){
     cp $SCRIPT_DIR/$app_name.service /etc/systemd/system/$app_name.service
-VALIDATE $? "Copy systemctl service"
+    VALIDATE $? "Copy systemctl service"
 
-systemctl daemon-reload
-systemctl enable $app_name &>>$LOG_FILE
-VALIDATE $? "Enable $app_name"
+    systemctl daemon-reload
+    systemctl enable $app_name &>>$LOG_FILE
+    VALIDATE $? "Enable $app_name"
 }
 
 app_restart(){
